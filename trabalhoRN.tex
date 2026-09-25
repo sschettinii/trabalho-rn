@@ -1,0 +1,213 @@
+\documentclass[aspectratio=169]{beamer}
+
+% --- Tema e Configurações Visuais ---
+\usetheme{Berlin}
+\usecolortheme{whale}
+
+% Remove a barra horizontal superior com as seções e bolinhas
+\setbeamertemplate{headline}{}
+
+% Remove os ícones flutuantes de navegação inferior
+\setbeamertemplate{navigation symbols}{} 
+
+% Mantém apenas a numeração de páginas no rodapé
+\setbeamertemplate{footline}[frame number] 
+
+% --- Pacotes ---
+\usepackage[utf8]{inputenc}
+\usepackage[portuguese]{babel}
+\usepackage{graphicx}
+\usepackage{amsmath}
+\usepackage{hyperref}
+
+% --- Informações da Apresentação ---
+\title[Mapas Auto-Organizáveis]{Mapas Auto-Organizáveis: Descoberta de Padrões e Redução de Dimensionalidade}
+\subtitle{Redes Neurais Artificiais}
+\author[A. Schettini \and V. Garcia]{André Tomonaga Schettini \and Vitor da Costa Garcia}
+\institute[UEL]{Universidade Estadual de Londrina (UEL)}
+\date{25 de novembro}
+
+\begin{document}
+	
+	% -------------------------------------------------------------
+	% Slide de Título
+	% -------------------------------------------------------------
+	\begin{frame}
+		\titlepage
+	\end{frame}
+	
+	% -------------------------------------------------------------
+	% Sumário
+	% -------------------------------------------------------------
+	\begin{frame}{Roteiro da Apresentação}
+		\tableofcontents
+	\end{frame}
+	
+	% =============================================================
+	% SEÇÃO 1: PERGUNTA 13 (Funcionamento do Mapa Auto-Organizável)
+	% =============================================================
+	\section{1. Como o Mapa Auto-Organizável Funciona? (Q13)}
+	
+	\subsection{Visão Geral}
+	\begin{frame}{Como um Mapa Auto-Organizável organiza informações?}
+		O **Mapa Auto-Organizável** mapeia dados de alta dimensão em uma grade regular e contínua de baixa dimensão (geralmente bidimensional).
+		
+		\begin{columns}[T]
+			\begin{column}{0.48\textwidth}
+				\begin{block}{Estrutura Básica}
+					\begin{itemize}
+						\item Camada de entrada contínua ($D$ dimensões).
+						\item Grade discreta de neurônios (ex: retangular ou hexagonal).
+						\item Cada neurônio $j$ possui um vetor sináptico de pesos $\mathbf{w}_j \in \mathbb{R}^D$.
+					\end{itemize}
+				\end{block}
+			\end{column}
+			
+			\begin{column}{0.48\textwidth}
+				\begin{alertblock}{Princípio de Auto-Organização}
+					Neurônios vizinhos na grade aprendem a responder a padrões de entrada semelhantes no espaço original, sem necessidade de supervisão externa.
+				\end{alertblock}
+			\end{column}
+		\end{columns}
+	\end{frame}
+	
+	\subsection{Ciclo de Aprendizado}
+	\begin{frame}{Os Três Passos do Mapa Auto-Organizável}
+		A dinâmica de treinamento baseia-se em três etapas competitivas e cooperativas:
+		
+		\begin{enumerate}
+			\item \textbf{Competição (Neurônio Vencedor):}
+			Para um dado vetor de entrada $\mathbf{x}$, determina-se a unidade de melhor correspondência (menor distância euclidiana):
+			\[
+			i(\mathbf{x}) = \arg\min_j \|\mathbf{x} - \mathbf{w}_j\|
+			\]
+			
+			\item \textbf{Cooperação (Vizinhança Topológica):}
+			O neurônio vencedor excita seus vizinhos na grade por meio de uma função de vizinhança Gaussiana $h_{j, i(\mathbf{x})}$.
+			
+			\item \textbf{Adaptação (Ajuste de Pesos):}
+			Os pesos do vencedor e de sua vizinhança aproximam-se do ponto $\mathbf{x}$:
+			\[
+			\mathbf{w}_j(t+1) = \mathbf{w}_j(t) + \eta(t) h_{j, i(\mathbf{x})}(t) \big(\mathbf{x} - \mathbf{w}_j(t)\big)
+			\]
+		\end{enumerate}
+	\end{frame}
+	
+	\subsection{Classificação como Rede Neural}
+	\begin{frame}{Fuga do MLP: Por que ainda é uma Rede Neural?}
+		Ao contrário do Perceptron e das redes Multicamadas (MLP), o Mapa Auto-Organizável **não utiliza retropropagação de erro (backpropagation), funções de ativação sigmoides nem gradiente descendente supervisionado**.
+		
+		Ainda assim, é legitimamente uma Rede Neural Artificial:
+		
+		\begin{columns}[T]
+			\begin{column}{0.48\textwidth}
+				\begin{block}{Paralelismo e Pesos Sinápticos}
+					\begin{itemize}
+						\item Composto por unidades fundamentais de processamento (\textbf{neurônios}).
+						\item O conhecimento fica armazenado na magnitude dos \textbf{pesos sinápticos} conectando as entradas às unidades da grade.
+					\end{itemize}
+				\end{block}
+			\end{column}
+			
+			\begin{column}{0.48\textwidth}
+				\begin{block}{Inspiração Biológica Real}
+					\begin{itemize}
+						\item Modela a \textbf{plasticidade cerebral} do córtex sensorial (mapas tonotópicos e somatossensoriais).
+						\item Fundamenta-se no princípio do \textbf{aprendizado hebbiano} e na inibição lateral cortical.
+					\end{itemize}
+				\end{block}
+			\end{column}
+		\end{columns}
+	\end{frame}
+	
+	\subsection{Demonstração Interativa}
+	\begin{frame}{Visualização Interativa}
+		\begin{columns}[c]
+			\begin{column}{0.48\textwidth}
+				\centering
+				\includegraphics[width=0.72\textwidth]{https_som_161_153_81_139_sslip_io_.png}
+				
+				\vspace{0.3cm}
+				\footnotesize
+				\href{https://som.161.153.81.139.sslip.io/}{\textbf{\underline{Acessar Visualização Online}}}
+			\end{column}
+			
+			\begin{column}{0.5\textwidth}
+				\begin{exampleblock}{Demonstração em Tempo Real}
+					\begin{itemize}
+						\item Aponte a câmera do celular para o QR Code para abrir o simulador interativo.
+						\item Observe a grade do mapa se dobrando e ocupando as regiões densas do espaço de dados.
+						\item Acompanhe a transição da ordenação global até a convergência local refinada.
+					\end{itemize}
+				\end{exampleblock}
+			\end{column}
+		\end{columns}
+	\end{frame}
+	
+	% =============================================================
+	% SEÇÃO 2: PERGUNTA 10 (Padrões sem Rótulos)
+	% =============================================================
+	\section{2. Padrões sem Rótulos (Q10)}
+	
+	\subsection{Descoberta de Estruturas}
+	\begin{frame}{Como descobrir padrões sem rótulos?}
+		Sem rótulos de classe ou supervisão externa, a descoberta de padrões fundamenta-se unicamente nas **regularidades intrínsecas** do conjunto de dados:
+		
+		\begin{itemize}
+			\item \textbf{Geometria e Proximidade:} Amostras com características comuns agrupam-se naturalmente sob neurônios vizinhos no mapa.
+			\item \textbf{Densidade de Probabilidade:} O mapa aproxima a distribuição contínua dos dados — regiões mais densas ativam e moldam mais neurônios.
+			\item \textbf{Visualização com Matriz-U:} Mede as distâncias euclidianas entre os pesos de neurônios vizinhos. Vales representam agrupamentos homogêneos e cumes indicam as fronteiras de separação.
+		\end{itemize}
+		
+		\begin{block}{Conexão com o Aprendizado Não Supervisionado}
+			A rede não precisa de respostas prévias; ela organiza a informação mapeando correlações estatísticas entre as variáveis de entrada.
+		\end{block}
+	\end{frame}
+	
+	% =============================================================
+	% SEÇÃO 3: PERGUNTA 15 (Redução de Dimensionalidade)
+	% =============================================================
+	\section{3. Redução de Dimensionalidade (Q15)}
+	
+	\subsection{Preservação da Informação}
+	\begin{frame}{Como reduzir a dimensionalidade preservando informação?}
+		Reduzir dimensões ($D \to 2$ ou $3$) exige projetar os dados mantendo a sua geometria fundamental:
+		
+		\begin{columns}[T]
+			\begin{column}{0.48\textwidth}
+				\begin{block}{Preservação Topológica}
+					\begin{itemize}
+						\item Se dois pontos estão próximos no espaço original $\mathbb{R}^D$, seus respectivos neurônios vencedores estarão próximos na grade 2D.
+						\item Capacidade de desdobramento não-linear de variedades (\textit{manifold unrolling}).
+					\end{itemize}
+				\end{block}
+			\end{column}
+			
+			\begin{column}{0.48\textwidth}
+				\begin{block}{Vantagens da Projeção}
+					\begin{itemize}
+						\item Compressão mantendo a estrutura global de vizinhança.
+						\item Facilita a inspeção visual humana de distribuições complexas em alta dimensão.
+					\end{itemize}
+				\end{block}
+			\end{column}
+		\end{columns}
+	\end{frame}
+	
+	\subsection{Conclusão}
+	\begin{frame}{Síntese e Considerações Finais}
+		\begin{itemize}
+			\item O **Mapa Auto-Organizável** organiza informações por competição, cooperação espacial e atualização sináptica adaptativa (Q13).
+			\item É uma rede neural legítima ancorada na neurobiologia cortical e no aprendizado hebbiano, operando sem retropropagação.
+			\item Identifica **agrupamentos e padrões latentes** sem necessidade de rótulos prévios (Q10).
+			\item Executa uma **redução de dimensionalidade não-linear** com preservação estrita da topologia dos dados (Q15).
+		\end{itemize}
+		
+		\vspace{0.6cm}
+		\centering
+		\textbf{Obrigado pela atenção!} \\
+		\vspace{0.2cm}
+		\footnotesize Dúvidas ou Comentários?
+	\end{frame}
+	
+\end{document}
