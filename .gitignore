@@ -1,0 +1,17 @@
+cat << 'EOF' > .gitignore
+# Arquivos auxiliares gerados pelo LaTeX/Beamer
+*.aux
+*.bbl
+*.blg
+*.log
+*.out
+*.toc
+*.synctex.gz
+*.nav
+*.snm
+*.vrb
+*.fls
+*.fdb_latexmk
+*.dvi
+.DS_Store
+EOF
