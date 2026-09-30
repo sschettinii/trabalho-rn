@@ -5,7 +5,21 @@
 \usecolortheme{whale}
 
 % Remove a barra horizontal superior com as seções e bolinhas
-\setbeamertemplate{headline}{}
+\setbeamertemplate{headline}{%
+	\begin{beamercolorbox}[colsep=1.5pt]{upper separation line head}
+	\end{beamercolorbox}
+	\begin{beamercolorbox}{section in head/foot}
+		\vskip2pt\insertsectionnavigationhorizontal{\paperwidth}{}{}\vskip2pt
+	\end{beamercolorbox}%
+	\begin{beamercolorbox}[colsep=1.5pt]{lower separation line head}
+	\end{beamercolorbox}
+}
+
+\usepackage[linesnumbered,ruled,vlined]{algorithm2e}
+% Ajusta cor dos comentários e estilo do algorithm2e para combinar com Beamer
+\SetAlFnt{\footnotesize}
+\SetAlCapFnt{\small}
+\SetAlCapNameFnt{\small}
 
 % Remove os ícones flutuantes de navegação inferior
 \setbeamertemplate{navigation symbols}{} 
@@ -48,63 +62,144 @@
 	% =============================================================
 	\section{1. Como o Mapa Auto-Organizável Funciona? (Q13)}
 	
-	\subsection{Visão Geral}
-	\begin{frame}{Como um Mapa Auto-Organizável organiza informações?}
-		O **Mapa Auto-Organizável** mapeia dados de alta dimensão em uma grade regular e contínua de baixa dimensão (geralmente bidimensional).
+	\subsection{A Intuição}
+	\begin{frame}{A Metáfora do "Lençol de Borracha"}
+		Para entender o SOM, imagine um espaço 3D contendo uma nuvem de pontos (nossos dados) e um \textbf{lençol de borracha quadriculado} (nossa rede neural).
 		
 		\begin{columns}[T]
 			\begin{column}{0.48\textwidth}
-				\begin{block}{Estrutura Básica}
+				\begin{block}{O Processo Físico}
 					\begin{itemize}
-						\item Camada de entrada contínua ($D$ dimensões).
-						\item Grade discreta de neurônios (ex: retangular ou hexagonal).
-						\item Cada neurônio $j$ possui um vetor sináptico de pesos $\mathbf{w}_j \in \mathbb{R}^D$.
+						\item Escolhemos um ponto de dado aleatório.
+						\item Agarramos o \textbf{nó do lençol} mais próximo desse ponto e o puxamos até ele.
+						\item Como é elástico, ele \textbf{arrasta os nós vizinhos} junto com ele.
 					\end{itemize}
 				\end{block}
 			\end{column}
 			
 			\begin{column}{0.48\textwidth}
-				\begin{alertblock}{Princípio de Auto-Organização}
-					Neurônios vizinhos na grade aprendem a responder a padrões de entrada semelhantes no espaço original, sem necessidade de supervisão externa.
+				\begin{alertblock}{Resfriamento}
+					No início, o lençol é muito flexível e se move em grandes blocos (ordenação global). Com o tempo, ele enrijece e ajusta apenas detalhes (convergência local).
 				\end{alertblock}
 			\end{column}
 		\end{columns}
 	\end{frame}
 	
-	\subsection{Ciclo de Aprendizado}
-	\begin{frame}{Os Três Passos do Mapa Auto-Organizável}
-		A dinâmica de treinamento baseia-se em três etapas competitivas e cooperativas:
+	\subsection{A Estrutura Matemática}
+	\subsection{O Algoritmo: Passo a Passo}
+	
+	\begin{frame}{Ciclo de Treinamento: A Estrutura e Inicialização do Mapa}
+		O SOM conecta dois espaços distintos: a \textbf{grade topológica 2D} ($\mathbb{Z}^2$, que define as vizinhanças) e o \textbf{espaço de entrada} ($\mathbb{R}^D$, onde residem os dados $\mathbf{x}$ e os pesos $\mathbf{w}_j$).
+		
+		\vspace{0.2cm}
+		
+		\begin{columns}[T]
+			\begin{column}{0.48\textwidth}
+				\begin{block}{1. Configuração da Grade}
+					\begin{itemize}
+						\item Define-se o arranjo discreto (ex.: matriz $20 \times 20$).
+						\item Cada nó $j$ da grade é um neurônio que terá um vetor de pesos $\mathbf{w}_j \in \mathbb{R}^D$.
+						\item A grade 2D serve como o "tecido elástico" a ser posicionado.
+					\end{itemize}
+				\end{block}
+			\end{column}
+			
+			\begin{column}{0.48\textwidth}
+				\begin{block}{2. Posições Iniciais no Espaço $\mathbb{R}^D$}
+					\begin{itemize}
+						\item \textbf{Aleatória:} Valores ao acaso em $\mathbb{R}^D$ (mais lenta, risco de torções topológicas).
+						\item \textbf{Amostral:} Sorteia instâncias reais do próprio dataset para iniciar os nós.
+					\end{itemize}
+				\end{block}
+			\end{column}
+		\end{columns}
+	\end{frame}
+	
+	\subsection{O Algoritmo: Passo a Passo}
+	\begin{frame}{Ciclo de Treinamento: Competição e Cooperação}
+		A cada iteração (ou época), a rede executa etapas baseadas em princípios biológicos:
 		
 		\begin{enumerate}
-			\item \textbf{Competição (Neurônio Vencedor):}
-			Para um dado vetor de entrada $\mathbf{x}$, determina-se a unidade de melhor correspondência (menor distância euclidiana):
+			\item \textbf{Competição (Achar o Vencedor - BMU):}
+			Apresentamos um dado $\mathbf{x}$. O neurônio $c$ com o vetor de pesos mais próximo vence (menor distância euclidiana):
 			\[
-			i(\mathbf{x}) = \arg\min_j \|\mathbf{x} - \mathbf{w}_j\|
+			c = \arg\min_j \|\mathbf{x} - \mathbf{w}_j\|
 			\]
 			
-			\item \textbf{Cooperação (Vizinhança Topológica):}
-			O neurônio vencedor excita seus vizinhos na grade por meio de uma função de vizinhança Gaussiana $h_{j, i(\mathbf{x})}$.
-			
-			\item \textbf{Adaptação (Ajuste de Pesos):}
-			Os pesos do vencedor e de sua vizinhança aproximam-se do ponto $\mathbf{x}$:
+			\item \textbf{Cooperação (Vizinhança):}
+			O vencedor $c$ avisa seus vizinhos na grade 2D que eles também vão aprender. A força do aviso decai com a distância na grade, usando uma Gaussiana:
 			\[
-			\mathbf{w}_j(t+1) = \mathbf{w}_j(t) + \eta(t) h_{j, i(\mathbf{x})}(t) \big(\mathbf{x} - \mathbf{w}_j(t)\big)
+			h_{c, j}(t) = \exp\left( -\frac{\|\mathbf{r}_c - \mathbf{r}_j\|^2}{2\sigma^2(t)} \right)
 			\]
 		\end{enumerate}
 	\end{frame}
 	
+	\begin{frame}{Ciclo de Treinamento: Adaptação}
+		\begin{enumerate}
+			\setcounter{enumi}{2}
+			\item \textbf{Adaptação (Puxar o lençol):}
+			Os pesos do vencedor e de seus vizinhos são movidos em linha reta na direção do dado $\mathbf{x}$:
+			\[
+			\mathbf{w}_j(t+1) = \mathbf{w}_j(t) + \eta(t) \cdot h_{c, j}(t) \cdot \big(\mathbf{x} - \mathbf{w}_j(t)\big)
+			\]
+			\begin{itemize}
+				\item $\eta(t)$: Taxa de aprendizado (tamanho do passo).
+				\item $(\mathbf{x} - \mathbf{w}_j)$: Vetor direção apontando do neurônio para o dado.
+			\end{itemize}
+			
+			\vspace{0.3cm}
+			\item \textbf{Decaimento (Resfriamento):}
+			A taxa de aprendizado $\eta(t)$ e o raio de vizinhança $\sigma(t)$ diminuem ao longo do tempo. O mapa passa de uma \textit{ordenação global} grossa para um \textit{ajuste fino} local.
+		\end{enumerate}
+	\end{frame}
+	
+	\subsection{Pseudocódigo}
+	\begin{frame}{Algoritmo Geral: Ciclo de Treinamento do SOM}
+		\begin{columns}[T]
+			\begin{column}{0.62\textwidth}
+				\begin{algorithm}[H]
+					\caption{Treinamento do SOM Clássico}
+					\KwIn{$X \in \mathbb{R}^{n \times p}$, $\epsilon_0, \sigma_0, T_{\max}$, distâncias $d$ e $d^*$}
+					\KwOut{Grade treinada de pesos $E = \{W_i\}$}
+					Inicializar a grade $E$\ com pesos aleatórios $W_i$\;
+					\For{$t \leftarrow 1$ \KwTo $T_{\max}$}{
+						Selecionar $X^* \in X$ aleatoriamente\;
+						$W^* \leftarrow \arg\min_{W \in E} d(W, X^*)$ \tcp*{\tiny Achar o BMU}
+						\For{cada neurônio $W_i \in E$}{
+							$W_i(t+1) \leftarrow W_i(t) + \Theta(t)\,\epsilon(t)\big(X^* - W_i(t)\big)$\;
+						}
+						Atualizar decaimentos:\\
+						\quad $\Theta(t) = \exp\left(-\frac{d^*(W^*, W_i)}{2\sigma^2(t)}\right)$\;
+						\quad $\sigma(t) = \sigma_0 \exp(-t / T_{\max})$\;
+						\quad $\epsilon(t) = \epsilon_0 \exp(-t / T_{\max})$\;
+					}
+				\end{algorithm}
+			\end{column}
+			
+			\begin{column}{0.36\textwidth}
+				\begin{block}{Parâmetros-Chave}
+					\begin{itemize}
+						\item \textbf{$d$ vs. $d^*$:} $d$ opera no espaço dos dados ($\mathbb{R}^p$); $d^*$ opera na topologia da grade.
+						\item \textbf{$X^*$:} Amostra estocástica sorteada a cada época/passo $t$.
+						\item \textbf{$W^*$:} O neurônio vencedor (BMU).
+						\item \textbf{$\Theta(t)$:} Ponderador gaussiano de vizinhança.
+					\end{itemize}
+				\end{block}
+			\end{column}
+		\end{columns}
+	\end{frame}
+	
 	\subsection{Classificação como Rede Neural}
 	\begin{frame}{Fuga do MLP: Por que ainda é uma Rede Neural?}
-		Ao contrário do Perceptron e das redes Multicamadas (MLP), o Mapa Auto-Organizável **não utiliza retropropagação de erro (backpropagation), funções de ativação sigmoides nem gradiente descendente supervisionado**.
+		Ao contrário das redes Multicamadas (MLP), o SOM \textbf{não utiliza retropropagação de erro (backpropagation) nem gradiente descendente}.
 		
 		Ainda assim, é legitimamente uma Rede Neural Artificial:
 		
 		\begin{columns}[T]
 			\begin{column}{0.48\textwidth}
-				\begin{block}{Paralelismo e Pesos Sinápticos}
+				\begin{block}{Paralelismo e Pesos}
 					\begin{itemize}
-						\item Composto por unidades fundamentais de processamento (\textbf{neurônios}).
-						\item O conhecimento fica armazenado na magnitude dos \textbf{pesos sinápticos} conectando as entradas às unidades da grade.
+						\item O conhecimento é armazenado de forma distribuída na magnitude dos \textbf{pesos sinápticos}.
 					\end{itemize}
 				\end{block}
 			\end{column}
@@ -112,37 +207,54 @@
 			\begin{column}{0.48\textwidth}
 				\begin{block}{Inspiração Biológica Real}
 					\begin{itemize}
-						\item Modela a \textbf{plasticidade cerebral} do córtex sensorial (mapas tonotópicos e somatossensoriais).
-						\item Fundamenta-se no princípio do \textbf{aprendizado hebbiano} e na inibição lateral cortical.
+						\item Modela a \textbf{plasticidade do córtex cerebral} (mapas somatossensoriais).
+						\item Baseia-se na \textit{inibição lateral} e no aprendizado Hebbiano.
 					\end{itemize}
 				\end{block}
 			\end{column}
 		\end{columns}
 	\end{frame}
 	
-\subsection{Demonstração Interativa}
-\begin{frame}{Visualização Interativa}
-	\begin{columns}[c]
-		\begin{column}{0.48\textwidth}
-			\centering
-			\includegraphics[width=0.72\textwidth]{qrcode_som.png}
-			
-			\vspace{0.3cm}
-			\footnotesize
-			\url{https://som.161.153.81.139.sslip.io}
-		\end{column}
+	\subsection{Exemplo e Demonstração}
+	\begin{frame}{O Exemplo Clássico: Mapeamento de Cores RGB}
+		Para visualizar a topologia, treinamos um SOM com \textbf{cores aleatórias}:
 		
-		\begin{column}{0.5\textwidth}
-			\begin{exampleblock}{Demonstração em Tempo Real}
-				\begin{itemize}
-					\item Aponte a câmera do celular para o QR Code para abrir o simulador interativo.
-					\item Observe a grade do mapa se dobrando e ocupando as regiões densas do espaço de dados.
-					\item Acompanhe a transição da ordenação global até a convergência local refinada.
-				\end{itemize}
-			\end{exampleblock}
-		\end{column}
-	\end{columns}
-\end{frame}
+		\begin{itemize}
+			\item \textbf{Entrada ($D=3$):} Vetores com canais Vermelho, Verde e Azul $[R, G, B]$.
+			\item \textbf{Saída (Grade 2D):} Matriz de $40 \times 40$ neurônios.
+		\end{itemize}
+		
+		\begin{exampleblock}{A Evolução do Treinamento}
+			\begin{enumerate}
+				\item \textbf{Início:} Uma tela de "estática" ruidosa, cores misturadas.
+				\item \textbf{Meio:} Manchas borradas agrupam tons parecidos (verdes puxando verdes).
+				\item \textbf{Fim:} Um arco-íris contínuo e suave, provando que o espaço 3D foi achatado em 2D perfeitamente.
+			\end{enumerate}
+		\end{exampleblock}
+	\end{frame}
+	
+	\begin{frame}{Visualização Interativa}
+		\begin{columns}[c]
+			\begin{column}{0.48\textwidth}
+				\centering
+				\includegraphics[width=0.72\textwidth]{qrcode_som.png}
+				
+				\vspace{0.3cm}
+				\footnotesize
+				\url{https://som.161.153.81.139.sslip.io}
+			\end{column}
+			
+			\begin{column}{0.5\textwidth}
+				\begin{exampleblock}{Demonstração em Tempo Real}
+					\begin{itemize}
+						\item Aponte a câmera para abrir o simulador.
+						\item Observe a grade se dobrando no espaço de dados.
+						\item Acompanhe a transição da ordenação global (movimentos amplos) para a convergência local refinada.
+					\end{itemize}
+				\end{exampleblock}
+			\end{column}
+		\end{columns}
+	\end{frame}
 	
 	% =============================================================
 	% SEÇÃO 2: PERGUNTA 10 (Padrões sem Rótulos)
